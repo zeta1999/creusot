@@ -252,6 +252,7 @@ impl BinOp {
             syn::BinOp::Ne(_) => Ok(Ne),
             syn::BinOp::Ge(_) => Ok(Ge),
             syn::BinOp::Gt(_) => Ok(Gt),
+            syn::BinOp::Rem(_) => Ok(Rem),
             _ => Err(Other("unsupported binary operation".into())),
         }
     }

@@ -173,6 +173,7 @@ fn op_to_op(op: term::BinOp) -> mlcfg::FullBinOp {
         term::BinOp::Ge => Other(BinOp::Ge),
         term::BinOp::Gt => Other(BinOp::Gt),
         term::BinOp::Lt => Other(BinOp::Lt),
+        term::BinOp::Rem => Other(BinOp::Rem),
         term::BinOp::And => And,
         term::BinOp::Or => Or,
         term::BinOp::Impl => {

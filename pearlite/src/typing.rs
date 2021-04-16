@@ -363,7 +363,7 @@ fn binop_type<G: GlobalContext>(
     use BinOp::*;
     ctx.unify(left_ty, right_ty)?;
     match op {
-        Add | Sub | Mul | Div => {
+        Add | Sub | Mul | Div | Rem => {
             if left_ty.is_numeric() {
                 Ok(left_ty.clone())
             } else {

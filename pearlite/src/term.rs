@@ -84,6 +84,7 @@ pub enum BinOp {
     And,
     Or,
     Impl,
+    Rem,
 }
 
 #[derive(Debug)]

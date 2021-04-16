@@ -396,6 +396,12 @@ impl EnvDisplay for Exp {
             Exp::BinaryOp(FullBinOp::Other(BinOp::Div), box l, box r) => {
                 write!(f, "{} / {}", parens!(fe, self, l), parens!(fe, self, r))?;
             }
+            Exp::BinaryOp(FullBinOp::Other(BinOp::Shl), box l, box r) => {
+                write!(f, "lsl {} {}", parens!(fe, self, l), parens!(fe, self, r))?;
+            }
+            Exp::BinaryOp(FullBinOp::Other(BinOp::BitAnd), box l, box r) => {
+                write!(f, "bw_and {} {}", parens!(fe, self, l), parens!(fe, self, r))?;
+            }
             Exp::BinaryOp(op, box l, box r) => {
                 write!(
                     f,
@@ -572,7 +578,8 @@ fn bin_op_to_string(op: &FullBinOp) -> &str {
         Other(Ge) => ">=",
         Other(Lt) => "<",
         Other(Le) => "<=",
-        _ => unreachable!("unexpected bin-op"),
+        Other(Rem) => "%",
+        op => unreachable!("unexpected bin-op {:?}", op),
     }
 }
 
