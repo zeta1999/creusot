@@ -1,3 +1,23 @@
+module Array
+  use mach.int.Int
+  use map.Map
+  use mach.int.UInt64
+
+  type array [@extraction:array] 'a = private {
+    ghost elts : uint64 -> 'a;
+                length : uint64
+  }
+  function ([]) (a: array 'a) (i: uint64) : 'a = a.elts i
+
+  val ([]) (a: array 'a) (i: uint64) : 'a
+    requires { [@expl:index in array bounds] 0 <= i < length a }
+    ensures  { result = a[i] }
+
+  val set (a : array 'a) (i : uint64) (v : 'a) : array 'a 
+    ensures { result.length = a.length }
+    ensures { result.elts = Map.set a.elts i v }
+end
+
 module Prelude
   use Ref
   use mach.int.Int
@@ -8,6 +28,8 @@ module Prelude
   use string.Char
   use floating_point.Single
   use floating_point.Double
+
+  use export Array
 
   type usize = uint64
   type isize = int64

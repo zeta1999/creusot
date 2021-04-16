@@ -405,6 +405,9 @@ impl<'a, 'b, 'tcx> FunctionTranslator<'a, 'b, 'tcx> {
 
                     inner = Let { pattern: TupleP(pat), arg: box inner, body: box Var("a".into()) }
                 }
+                ArrayIndex(v) => {
+                    inner = Index { arr: box inner, index: box Var(self.translate_local(*v)) }
+                }
             }
         }
         inner
@@ -477,6 +480,9 @@ impl<'a, 'b, 'tcx> FunctionTranslator<'a, 'b, 'tcx> {
                         arg: box self.translate_rplace(&stump),
                         body: box Tuple(varexps),
                     }
+                }
+                ArrayIndex(v) => {
+                    inner = Call(box QVar("set".into()), vec![self.translate_rplace(&stump), Var(self.translate_local(*v)), inner])
                 }
             }
         }

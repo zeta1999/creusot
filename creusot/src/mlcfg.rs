@@ -302,6 +302,7 @@ pub enum Exp {
     QVar(QName),
     RecUp { record: Box<Exp>, label: String, val: Box<Exp> },
     RecField { record: Box<Exp>, label: String },
+    Index { arr: Box<Exp>, index: Box<Exp> },
     Tuple(Vec<Exp>),
     Constructor { ctor: QName, args: Vec<Exp> },
     BorrowMut(Box<Exp>),
@@ -365,7 +366,8 @@ impl Exp {
             Exp::Var(_) => Closed,
             Exp::QVar(_) => Closed,
             Exp::RecUp { .. } => Term,
-            Exp::RecField { .. } => Any,
+            Exp::RecField { .. } => Term,
+            Exp::Index { .. } => Any,
             Exp::Tuple(_) => Closed,
             Exp::Constructor { .. } => Term,
             // Exp::Seq(_, _) => { Term }
@@ -463,6 +465,10 @@ impl Exp {
             }
             Exp::RecField { record, .. } => {
                 record.subst(subst);
+            }
+            Exp::Index { arr, index } => {
+                arr.subst(subst);
+                index.subst(subst);
             }
             Exp::Tuple(tuple) => {
                 for t in tuple {

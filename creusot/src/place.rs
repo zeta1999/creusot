@@ -7,6 +7,9 @@ use rustc_target::abi::VariantIdx;
 
 // This representation is not strictly needed, but I find that it still splits up the
 // work between the translation to MLCfg and MIR nicely.
+
+// TODO: Get rid of this file
+
 pub use rustc_hir::Mutability;
 
 #[derive(Clone, Debug)]
@@ -14,6 +17,7 @@ pub enum Projection {
     Deref(Mutability),
     FieldAccess { base_ty: DefId, ctor: VariantIdx, ix: usize },
     TupleAccess { size: usize, ix: usize },
+    ArrayIndex(Local),
     // Down { ctor: Symbol },
 }
 use Projection::*;
@@ -56,6 +60,7 @@ pub fn simplify_place<'tcx>(
                 }
             },
             ProjectionElem::Downcast(_, _) => {}
+            ProjectionElem::Index(v) => { res_proj.push(ArrayIndex(v)); }
             _ => {
                 panic!("unsupported place projection");
             }

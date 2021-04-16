@@ -180,6 +180,7 @@ pub enum Type {
     App { func: Box<Type>, args: Vec<Type> },
     Lit(LitTy),
     Var(TyVar),
+    Slice(Box<Type>),
     Unknown(TyUnk),
 }
 
@@ -217,6 +218,7 @@ impl Substitution for VarSubst {
             }
             Type::Lit(_) => {}
             Type::Path { .. } => {}
+            Type::Slice(box ty) => self.subst(ty),
             Type::Unknown(_) => {}
         }
     }
@@ -262,6 +264,7 @@ impl Type {
             Var(var) => {
                 v.push(*var);
             }
+            Slice(ty) => ty.fvs_(v),
             Unknown(_) => {}
         }
     }

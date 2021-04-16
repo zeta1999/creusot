@@ -126,6 +126,9 @@ pub fn lower_type_to_why(ctx: &mut Ctx, ty: pearlite::term::Type) -> crate::mlcf
             .into_iter()
             .rfold(lower_type_to_why(ctx, res), |acc, arg| TFun(box lower_type_to_why(ctx, arg), box acc)),
         term::Type::Var(tyvar) => TVar(('a'..).nth(tyvar.0 as usize).unwrap().to_string()),
+        term::Type::Slice(box ty) => {
+            TApp(box TConstructor("array".into()), vec![lower_type_to_why(ctx, ty)])
+        }
         term::Type::Unknown(_) => {
             panic!()
         } // _ => panic!("{:?}", ty),

@@ -141,6 +141,7 @@ pub fn ty_to_pearlite<'tcx>(tcx: TyCtxt<'tcx>, ty: &TyS<'tcx>) -> pearlite::term
             term::Type::Tuple { elems: tys.types().map(|ty| ty_to_pearlite(tcx, ty)).collect() }
         }
         Param(p) => Type::Var(pearlite::term::TyVar(p.index)),
+        Slice(ty) => Type::Slice(box ty_to_pearlite(tcx, ty)),
         _ => unimplemented!("{:?}", ty.kind()),
     }
 }
