@@ -14,7 +14,7 @@ use rustc_middle::{
     mir::traversal::preorder,
     mir::{BasicBlock, Body, Local, Location, Operand, VarDebugInfo},
     ty::TyCtxt,
-    ty::TyKind,
+    ty::{TraitPredicate, TyKind},
 };
 use rustc_mir::dataflow::{
     self,
@@ -178,7 +178,7 @@ impl<'a, 'b, 'tcx> FunctionTranslator<'a, 'b, 'tcx> {
         let vars = vars.collect::<Vec<_>>();
 
         let name = translate_value_id(self.tcx, nm);
-
+        self.trait_clones(nm);
         move_invariants_into_loop(&mut self.past_blocks);
         CfgFunction { name, retty, args, vars, blocks: self.past_blocks, contract: contracts }
     }
@@ -210,6 +210,30 @@ impl<'a, 'b, 'tcx> FunctionTranslator<'a, 'b, 'tcx> {
         }
     }
 
+    fn trait_clones(&mut self, def_id: DefId) -> Vec<why3::declaration::Decl> {
+        let traits = traits_used_by(self.tcx, def_id);
+
+        let mut trait_clones = Vec::new();
+        for t in traits {
+            dbg!(&t.trait_ref.substs);
+            dbg!(rustc_middle::ty::TraitRef::identity(self.tcx, t.def_id()));
+            let trait_def = self.tcx.explicit_predicates_of(t.def_id());
+            dbg!(trait_def);
+            let mut params = t.trait_ref.substs.types();
+            let self_ty = params.nth(0).unwrap();
+            let subst = vec![CloneSubst::self_subst(ty::translate_ty(
+                self.ty_ctx,
+                rustc_span::DUMMY_SP,
+                self_ty,
+            ))];
+            let clone =
+                Decl::Clone(DeclClone { name: translate_type_id(self.tcx, t.def_id()), subst });
+            dbg!(&t, &clone);
+
+            trait_clones.push(clone);
+        }
+        trait_clones
+    }
     fn freeze_borrows_at_block_start(&mut self, bb: BasicBlock) {
         let pred_blocks = &self.body.predecessors()[bb];
 
@@ -470,6 +494,22 @@ fn move_invariants_into_loop(body: &mut BTreeMap<BlockId, Block>) {
         invs.append(&mut tgt.statements);
         let _ = std::mem::replace(&mut tgt.statements, invs);
     }
+}
+
+fn traits_used_by<'tcx>(tcx: TyCtxt<'tcx>, def_id: DefId) -> Vec<TraitPredicate<'tcx>> {
+    let predicates = tcx.predicates_of(def_id);
+    let mut traits = Vec::new();
+
+    for (pred, _) in predicates.predicates {
+        let inner = pred.kind().no_bound_vars().unwrap();
+        use rustc_middle::ty::PredicateKind::*;
+
+        match inner {
+            Trait(tp, _) => traits.push(tp),
+            _ => {}
+        }
+    }
+    traits
 }
 
 use heck::{CamelCase, MixedCase};

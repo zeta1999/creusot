@@ -50,6 +50,7 @@ impl Decl {
             Decl::Scope(scope) => scope.pretty(alloc, env),
             Decl::PredDecl(p) => p.pretty(alloc, env),
             Decl::TyDecl(t) => t.pretty(alloc, env),
+            Decl::Clone(c) => unimplemented!(),
         }
     }
 }

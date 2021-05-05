@@ -22,6 +22,7 @@ pub enum Decl {
     Module(Module),
     TyDecl(TyDecl),
     PredDecl(Predicate),
+    Clone(DeclClone),
 }
 
 #[derive(Debug, Default)]
@@ -90,5 +91,22 @@ impl TyDecl {
             }
         }
         used
+    }
+}
+
+#[derive(Debug)]
+pub struct DeclClone {
+    pub name: QName,
+    pub subst: Vec<CloneSubst>,
+}
+
+#[derive(Debug)]
+pub enum CloneSubst {
+    Type(LocalIdent, Type),
+}
+
+impl CloneSubst {
+    pub fn self_subst(ty: Type) -> Self {
+        Self::Type(LocalIdent::Name("self".into()), ty)
     }
 }
