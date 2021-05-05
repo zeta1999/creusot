@@ -17,6 +17,7 @@ pub struct Scope {
 #[derive(Debug)]
 pub enum Decl {
     FunDecl(CfgFunction),
+    ValDecl(Val),
     LogicDecl(Logic),
     Scope(Scope),
     Module(Module),
@@ -109,4 +110,13 @@ impl CloneSubst {
     pub fn self_subst(ty: Type) -> Self {
         Self::Type(LocalIdent::Name("self".into()), ty)
     }
+}
+
+
+#[derive(Debug)]
+pub struct Val {
+    pub name: QName,
+    pub contract: Contract,
+    pub params: Vec<(LocalIdent, Type)>,
+    pub retty: Type,
 }

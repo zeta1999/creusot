@@ -6,6 +6,10 @@ trait TraitWParams<D, C> {}
 
 fn uses_custom<A, B, T : TraitWParams<A, B>>(t : T) {}
 
+trait TraitWParams2<D : Ord, C> : TraitWParams<D, C> {}
+
+fn uses_custom2<A : Ord, B, T : TraitWParams2<A, B>>(t : T) {}
+
 
 // trait Super {}
 

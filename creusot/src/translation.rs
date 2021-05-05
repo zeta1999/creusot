@@ -14,7 +14,7 @@ use rustc_middle::{
     mir::traversal::preorder,
     mir::{BasicBlock, Body, Local, Location, Operand, VarDebugInfo},
     ty::TyCtxt,
-    ty::{TraitPredicate, TyKind},
+    ty::TyKind,
 };
 use rustc_mir::dataflow::{
     self,
@@ -31,19 +31,20 @@ use why3::mlcfg::{self, Exp::*, Pattern::*, Statement::*, *};
 pub mod specification;
 mod statement;
 mod terminator;
+mod traits;
 pub mod ty;
 
 pub struct TranslationCtx<'a, 'tcx> {
     sess: &'a Session,
     tcx: TyCtxt<'tcx>,
     used_tys: IndexSet<DefId>,
-
+    used_traits: IndexSet<DefId>,
     pub modules: ModuleTree,
 }
 
 impl<'tcx, 'a> TranslationCtx<'a, 'tcx> {
     pub fn new(tcx: TyCtxt<'tcx>, sess: &'a Session) -> Self {
-        Self { sess, tcx, used_tys: IndexSet::new(), modules: ModuleTree::new() }
+        Self { sess, tcx, used_tys: IndexSet::new(), used_traits: IndexSet::new(), modules: ModuleTree::new() }
     }
 
     fn crash_and_error(&self, span: Span, msg: &str) -> ! {
@@ -178,7 +179,7 @@ impl<'a, 'b, 'tcx> FunctionTranslator<'a, 'b, 'tcx> {
         let vars = vars.collect::<Vec<_>>();
 
         let name = translate_value_id(self.tcx, nm);
-        self.trait_clones(nm);
+        self.ctx.trait_clones(nm);
         move_invariants_into_loop(&mut self.past_blocks);
         CfgFunction { name, retty, args, vars, blocks: self.past_blocks, contract: contracts }
     }
@@ -210,30 +211,6 @@ impl<'a, 'b, 'tcx> FunctionTranslator<'a, 'b, 'tcx> {
         }
     }
 
-    fn trait_clones(&mut self, def_id: DefId) -> Vec<why3::declaration::Decl> {
-        let traits = traits_used_by(self.tcx, def_id);
-
-        let mut trait_clones = Vec::new();
-        for t in traits {
-            dbg!(&t.trait_ref.substs);
-            dbg!(rustc_middle::ty::TraitRef::identity(self.tcx, t.def_id()));
-            let trait_def = self.tcx.explicit_predicates_of(t.def_id());
-            dbg!(trait_def);
-            let mut params = t.trait_ref.substs.types();
-            let self_ty = params.nth(0).unwrap();
-            let subst = vec![CloneSubst::self_subst(ty::translate_ty(
-                self.ty_ctx,
-                rustc_span::DUMMY_SP,
-                self_ty,
-            ))];
-            let clone =
-                Decl::Clone(DeclClone { name: translate_type_id(self.tcx, t.def_id()), subst });
-            dbg!(&t, &clone);
-
-            trait_clones.push(clone);
-        }
-        trait_clones
-    }
     fn freeze_borrows_at_block_start(&mut self, bb: BasicBlock) {
         let pred_blocks = &self.body.predecessors()[bb];
 
@@ -496,22 +473,6 @@ fn move_invariants_into_loop(body: &mut BTreeMap<BlockId, Block>) {
     }
 }
 
-fn traits_used_by<'tcx>(tcx: TyCtxt<'tcx>, def_id: DefId) -> Vec<TraitPredicate<'tcx>> {
-    let predicates = tcx.predicates_of(def_id);
-    let mut traits = Vec::new();
-
-    for (pred, _) in predicates.predicates {
-        let inner = pred.kind().no_bound_vars().unwrap();
-        use rustc_middle::ty::PredicateKind::*;
-
-        match inner {
-            Trait(tp, _) => traits.push(tp),
-            _ => {}
-        }
-    }
-    traits
-}
-
 use heck::{CamelCase, MixedCase};
 
 pub fn translate_type_id(tcx: TyCtxt, def_id: DefId) -> QName {
@@ -557,9 +518,13 @@ fn translate_defid(tcx: TyCtxt, def_id: DefId, ty: bool) -> QName {
             name_segs = mod_segs;
             mod_segs = vec!["Type".to_owned()];
         }
+        (Trait, _) => {
+            assert_eq!(name_segs.len(), 0);
+            name_segs = vec![mod_segs.pop().unwrap()];
+        }
         (Mod, _) => {}
         (_, Some(Namespace::ValueNS)) => {}
-        (_, _) => unreachable!(),
+        (a, b) => unreachable!("{:?} {:?}", a, b),
     }
 
     QName { module: mod_segs, name: name_segs }

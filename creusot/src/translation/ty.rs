@@ -39,7 +39,7 @@ pub fn translate_ty<'tcx>(ctx: &mut TranslationCtx<'_, 'tcx>, span: Span, ty: Ty
             let tys = args.types().map(|t| translate_ty(ctx, span, t)).collect();
             MlT::Tuple(tys)
         }
-        Param(p) => MlT::TVar(translate_ty_param(p.name)),
+        Param(p) => MlT::TConstructor(QName { module: vec![], name: vec![p.to_string().to_lowercase()] }),
         Ref(_, ty, borkind) => {
             use rustc_ast::Mutability::*;
             match borkind {

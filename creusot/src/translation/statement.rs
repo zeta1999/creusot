@@ -1,4 +1,3 @@
-use rustc_errors::DiagnosticId;
 use rustc_middle::mir::{
     BorrowKind::*, Operand::*, Place, Rvalue, SourceInfo, Statement, StatementKind,
 };
